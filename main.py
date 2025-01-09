@@ -124,20 +124,22 @@ async def disconnect(sid):
 async def handle_text_to_speech(sid, data):
     try:
         text = data.get('text', '')
-        print(f"Texto original: {text}")
+        source_lang = data.get('source_lang', 'es')  # Idioma del texto de entrada
+        target_lang = data.get('target_lang', 'en')  # Idioma para el audio
+        print(f"Texto original ({source_lang}): {text}")
         
-        # Traducir al inglés
+        # Traducir al idioma objetivo
         translator = Translator()
-        translated = translator.translate(text, src='es', dest='en')
+        translated = translator.translate(text, src=source_lang, dest=target_lang)
         text = translated.text
-        print(f"Texto traducido: {text}")
+        print(f"Texto traducido ({target_lang}): {text}")
         
         # Generar un nombre único para el archivo
         timestamp = int(time.time() * 1000)
         output_path = f"static/temp/output_{timestamp}.mp3"
         
-        # Generar el audio con gTTS
-        tts = gTTS(text=text, lang='en', tld='com')  # tld='com' para voz de EE.UU.
+        # Generar el audio con gTTS en el idioma objetivo
+        tts = gTTS(text=text, lang=target_lang)
         tts.save(output_path)
         
         print(f"Audio generated at {output_path}")
@@ -166,30 +168,42 @@ async def handle_text_to_speech(sid, data):
         traceback.print_exc()
         await sio.emit('error', {'message': str(e)}, to=sid)
 
-@sio.event
+@sio.on('speech_to_text')
 async def speech_to_text(sid, data):
     try:
         audio_data = data.get('audio', '')
-        source_lang = data.get('source_lang', 'es')
-        target_lang = data.get('target_lang', 'en')
+        source_lang = data.get('source_lang', 'es')  # Idioma del audio de entrada
+        target_lang = data.get('target_lang', 'en')  # Idioma para el texto
         
-        # Decodificar audio base64 y guardar
+        # Decodificar el audio
         audio_bytes = base64.b64decode(audio_data)
-        audio_path = f"temp/input_{sid}.wav"
-        with open(audio_path, 'wb') as f:
+        
+        # Guardar temporalmente el archivo de audio
+        temp_filename = "temp/temp_audio.wav"
+        with open(temp_filename, "wb") as f:
             f.write(audio_bytes)
         
-        # Reconocimiento de voz
+        # Inicializar el reconocedor
         r = sr.Recognizer()
-        with sr.AudioFile(audio_path) as source:
+        
+        # Cargar el archivo de audio
+        with sr.AudioFile(temp_filename) as source:
             audio = r.record(source)
+            
+            # Reconocer el texto en el idioma de origen
             text = r.recognize_google(audio, language=source_lang)
-        
-        # Enviar texto reconocido al cliente
-        await sio.emit('speech_to_text_response', {
-            'text': text
-        }, to=sid)
-        
+            print(f"Texto reconocido ({source_lang}): {text}")
+            
+            # Traducir al idioma objetivo si es diferente
+            if source_lang != target_lang:
+                translator = Translator()
+                translated = translator.translate(text, src=source_lang, dest=target_lang)
+                text = translated.text
+                print(f"Texto traducido ({target_lang}): {text}")
+            
+            # Enviar el texto al cliente
+            await sio.emit('speech_to_text_response', {'text': text}, to=sid)
+            
     except Exception as e:
         print(f"Error in speech_to_text: {str(e)}")
         await sio.emit('error', {'message': str(e)}, to=sid)

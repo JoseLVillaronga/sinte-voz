@@ -117,12 +117,19 @@ voiceBtn.addEventListener('click', toggleRecording);
 function sendMessage() {
     const text = messageInput.value.trim();
     if (text) {
+        // Obtener los idiomas seleccionados
+        const sourceLangValue = sourceLang.value;
+        const targetLangValue = targetLang.value;
+        
+        console.log(`Enviando mensaje - Idioma origen: ${sourceLangValue}, Idioma destino: ${targetLangValue}`);
+        
         socket.emit('text_to_speech', {
             text: text,
-            source_lang: sourceLang.value,
-            target_lang: targetLang.value
+            source_lang: sourceLangValue,
+            target_lang: targetLangValue
         });
-        addMessage(text, 'sent');
+        
+        addMessage(`${text} (${sourceLangValue} → ${targetLangValue})`, 'sent');
         messageInput.value = '';
     }
 }
@@ -158,10 +165,17 @@ async function toggleRecording() {
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = () => {
                     const base64Audio = reader.result.split(',')[1];
+                    
+                    // Obtener los idiomas seleccionados
+                    const sourceLangValue = sourceLang.value;
+                    const targetLangValue = targetLang.value;
+                    
+                    console.log(`Enviando audio - Idioma origen: ${sourceLangValue}, Idioma destino: ${targetLangValue}`);
+                    
                     socket.emit('speech_to_text', {
                         audio: base64Audio,
-                        source_lang: sourceLang.value,
-                        target_lang: targetLang.value
+                        source_lang: sourceLangValue,
+                        target_lang: targetLangValue
                     });
                 };
             };
@@ -169,6 +183,10 @@ async function toggleRecording() {
             mediaRecorder.start();
             isRecording = true;
             voiceBtn.classList.add('recording');
+            
+            // Mostrar indicador de idioma actual
+            console.log(`Grabando en: ${sourceLang.value}`);
+            
         } catch (err) {
             console.error('Error accessing microphone:', err);
         }
