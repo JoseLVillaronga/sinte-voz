@@ -1,0 +1,42 @@
+.chat-container {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+}
+
+.message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 70%;
+}
+
+.message.sent {
+    background-color: #007bff;
+    color: white;
+    margin-left: auto;
+}
+
+.message.received {
+    background-color: #e9ecef;
+    margin-right: auto;
+}
+
+.recording {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        background-color: #dc3545;
+    }
+    50% {
+        background-color: #e4606d;
+    }
+    100% {
+        background-color: #dc3545;
+    }
+}
