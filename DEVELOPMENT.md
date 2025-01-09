@@ -83,6 +83,33 @@ static/temp/
 - gTTS
 - SpeechRecognition
 
+### Integración con Aplicaciones Externas
+
+1. **Zoom y otras aplicaciones de videoconferencia**:
+   - La aplicación expone "Virtual_Microphone" como dispositivo de entrada
+   - Este dispositivo captura el audio generado por el TTS
+   - Configuración verificada y funcional en Zoom
+   - Permite usar la síntesis de voz en llamadas en vivo
+
+2. **Configuración de Audio Virtual**:
+   ```bash
+   # Dispositivos configurados
+   virtual_speaker: Salida de audio para TTS
+   virtual_speaker.monitor: Monitor del audio de salida
+   virtual_mic: Dispositivo de entrada virtual para otras aplicaciones
+   ```
+
+3. **Casos de Uso**:
+   - Participación en reuniones usando TTS
+   - Grabación de conversaciones sintetizadas
+   - Integración con otras aplicaciones de comunicación
+
+### Próximas Pruebas (Sesión Siguiente)
+1. Verificación de latencia en Zoom
+2. Pruebas de calidad de audio
+3. Ajustes de volumen y ganancia
+4. Pruebas de carga con conversaciones largas
+
 ### Problemas Conocidos y Soluciones
 
 1. **Latencia en TTS**:
