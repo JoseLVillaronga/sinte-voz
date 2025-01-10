@@ -38,8 +38,16 @@ pip install -r requirements.txt
 
 4. Configurar dispositivos de audio virtuales:
 ```bash
+pulseaudio -k
+pulseaudio --start
+aplay -l
+sudo modprobe -r snd_usb_audio
+sudo modprobe snd_usb_audio
+pactl load-module module-alsa-card device_id=0
 pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description="Virtual_Speaker"
 pactl load-module module-null-sink sink_name=virtual_mic sink_properties=device.description="Virtual_Mic"
+sleep 2
+pactl list short sources
 ```
 
 ## Uso
