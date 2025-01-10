@@ -28,7 +28,7 @@ cd sinte-voz
 2. Crear y activar entorno virtual:
 ```bash
 python -m venv venv
-source venv/bin/activate
+source ./venv/bin/activate
 ```
 
 3. Instalar dependencias:
