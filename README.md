@@ -1,9 +1,26 @@
-# Sinte-Voz: Interfaz de Chat con Síntesis y Reconocimiento de Voz
+# 🎙️ Sinte-Voz
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Platform](https://img.shields.io/badge/platform-linux-lightgrey.svg)](https://www.linux.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+
+> 🌐 Rompiendo barreras de comunicación: Una solución de código abierto para personas sordas
+
+Aplicación web para comunicación bidireccional a través de voz y texto, diseñada especialmente para personas sordas o con dificultades auditivas.
 
 ## Descripción
-Sinte-Voz es una aplicación web que permite la comunicación bidireccional mediante voz y texto, incorporando capacidades de síntesis de voz (TTS) y reconocimiento de voz (STT). La aplicación está diseñada para funcionar con PulseAudio en sistemas Linux, permitiendo la creación de dispositivos de audio virtuales para una mejor gestión del audio.
+Sinte-Voz es una aplicación web diseñada para facilitar la comunicación bidireccional mediante voz y texto, con un enfoque especial en la accesibilidad para personas sordomudas. La aplicación permite que usuarios sordomudos participen en llamadas telefónicas y videoconferencias con personas oyentes, actuando como un puente de comunicación en tiempo real. Incorpora capacidades de síntesis de voz (TTS) y reconocimiento de voz (STT), funcionando con PulseAudio en sistemas Linux para una gestión avanzada del audio mediante dispositivos virtuales.
 
 ## Características
+
+- 🎤 Captura de audio USB de alta calidad
+- 🔄 Traducción bidireccional en tiempo real
+- 💬 Chat de texto a voz y voz a texto
+- 🌐 Soporte para múltiples idiomas
+- 🎯 Baja latencia en reconocimiento de voz
+- 🔌 Detección automática de dispositivos USB
+- 🎙️ Micrófono virtual para aplicaciones de videoconferencia
 - Interfaz web en tiempo real usando Socket.IO
 - Síntesis de voz (TTS) usando gTTS
 - Reconocimiento de voz usando Speech Recognition
@@ -11,11 +28,29 @@ Sinte-Voz es una aplicación web que permite la comunicación bidireccional medi
 - Manejo de dispositivos de audio virtuales con PulseAudio
 - Grabación de audio en formato WAV
 
+## Casos de Uso Principales
+- **Asistencia para Personas Sordomudas**:
+  - Permite participar en llamadas y videoconferencias escribiendo texto que se convierte en voz
+  - Transcribe la voz del interlocutor a texto en tiempo real
+  - Se integra con Zoom, aplicaciones de telefonía y otras plataformas de comunicación
+  - Soporta comunicación multiidioma con traducción automática
+
+- **Comunicación General**:
+  - Chat en tiempo real con capacidades de voz
+  - Traducción automática de idiomas
+  - Grabación y archivo de conversaciones
+
 ## Requisitos del Sistema
 - Python 3.11 o superior
 - PulseAudio
 - Navegador web moderno
 - Conexión a Internet (para TTS y traducción)
+- Dispositivo de audio USB
+- Sistema operativo Linux (probado en Debian/Ubuntu)
+- Dependencias del sistema:
+  ```bash
+  sudo apt-get install portaudio19-dev python3-pyaudio
+  ```
 
 ## Instalación
 
@@ -65,6 +100,42 @@ python main.py
 ./grabar.sh
 ```
 
+## Configuración
+
+1. Asegúrate de tener conectado tu dispositivo de audio USB
+2. Verifica que el dispositivo sea reconocido:
+   ```bash
+   arecord -l
+   ```
+3. El dispositivo USB debería aparecer como "USB Audio Device"
+
+## Integración con Zoom/Meet
+
+1. En la configuración de audio de tu aplicación de videoconferencia:
+   - Selecciona "Monitor of Null Output" como micrófono
+   - Selecciona tu dispositivo de salida normal para los altavoces
+
+2. Cuando alguien hable:
+   - Su voz será capturada por el micrófono USB
+   - El texto traducido aparecerá en el chat
+   - Puedes responder escribiendo en el chat y se enviará como voz
+
+## Solución de Problemas
+
+- Si el dispositivo USB no es detectado:
+  ```bash
+  # Listar dispositivos de audio
+  arecord -l
+  aplay -l
+  ```
+
+- Si hay problemas con el micrófono virtual:
+  ```bash
+  # Reiniciar servicios de audio
+  pulseaudio -k
+  pulseaudio --start
+  ```
+
 ## Estructura del Proyecto
 - `main.py`: Servidor principal y lógica de la aplicación
 - `grabar.sh`: Script para grabar audio del chat
@@ -79,5 +150,10 @@ La aplicación utiliza dos dispositivos de audio virtuales:
 - `virtual_speaker`: Para reproducción de audio TTS
 - `virtual_mic`: Para captura de audio STT
 
+## Contribuir
+
+Las contribuciones son bienvenidas. Por favor, abre un issue para discutir cambios mayores.
+
 ## Licencia
-[Especificar la licencia]
+
+Este proyecto está licenciado bajo los términos de la licencia MIT.

@@ -4,7 +4,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -24,20 +23,31 @@ wheels/
 # Virtual Environment
 venv/
 ENV/
+env/
 
-# IDE
+# IDEs
 .idea/
 .vscode/
 *.swp
 *.swo
+.project
+.pydevproject
 
 # Archivos temporales
-static/temp/
-*.mp3
-*.wav
+static/temp/*
+!static/temp/.gitkeep
+static/audio/*
+!static/audio/.gitkeep
 
 # Logs
 *.log
+logs/
+npm-debug.log*
+
+# Configuración local
+.env
+.env.*
+!config.example.env
 
 # Sistema operativo
 .DS_Store

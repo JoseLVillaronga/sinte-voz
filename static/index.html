@@ -34,20 +34,23 @@
                                 </select>
                             </div>
                         </div>
-                        <div style="display: none;" class="row mt-2">
+                        <div class="row mt-2">
                             <div class="col">
-                                <label>Dispositivo de entrada:</label>
+                                <label>Dispositivo de entrada USB:</label>
                                 <select id="inputDevice" class="form-select"></select>
                             </div>
                             <div class="col">
-                                <label>Dispositivo de salida:</label>
-                                <select id="outputDevice" class="form-select"></select>
+                                <label>Estado del monitoreo:</label>
+                                <div class="d-flex align-items-center">
+                                    <button class="btn btn-primary me-2" id="monitor-btn">Iniciar Monitoreo</button>
+                                    <span id="monitor-status" class="badge bg-secondary">Inactivo</span>
+                                </div>
                             </div>
                         </div>
                         <div class="row mt-2">
                             <div class="col">
-                                <div style="display: none;" class="alert alert-info">
-                                    Micrófono virtual: <span id="virtualMic">Cargando...</span>
+                                <div class="alert alert-info">
+                                    <strong>Micrófono virtual:</strong> <span id="virtualMic">Cargando...</span>
                                 </div>
                             </div>
                         </div>
@@ -57,7 +60,6 @@
                         <div class="input-group">
                             <input type="text" id="message-input" class="form-control" placeholder="Escribe tu mensaje...">
                             <button class="btn btn-primary" id="send-btn">Enviar</button>
-                            <button style="display: none;" class="btn btn-secondary" id="voice-btn">🎤</button>
                         </div>
                     </div>
                 </div>

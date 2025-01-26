@@ -1,198 +1,140 @@
-// Configurar Socket.IO
-const socket = io({
-    path: '/socket.io/',
-    transports: ['websocket', 'polling']
-});
+// Esperar a que el DOM esté completamente cargado
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded');
 
-let mediaRecorder;
-let audioChunks = [];
-let isRecording = false;
-let selectedInputDevice = null;
-let selectedOutputDevice = null;
+    // Elementos del DOM
+    const elements = {
+        messageInput: document.getElementById('message-input'),
+        sendBtn: document.getElementById('send-btn'),
+        chatMessages: document.getElementById('chat-messages'),
+        sourceLang: document.getElementById('sourceLang'),
+        targetLang: document.getElementById('targetLang'),
+        inputDevice: document.getElementById('inputDevice'),
+        virtualMic: document.getElementById('virtualMic'),
+        monitorBtn: document.getElementById('monitor-btn'),
+        monitorStatus: document.getElementById('monitor-status')
+    };
 
-// Elementos del DOM
-const messageInput = document.getElementById('message-input');
-const sendBtn = document.getElementById('send-btn');
-const voiceBtn = document.getElementById('voice-btn');
-const chatMessages = document.getElementById('chat-messages');
-const sourceLang = document.getElementById('sourceLang');
-const targetLang = document.getElementById('targetLang');
-const inputDeviceSelect = document.getElementById('inputDevice');
-const outputDeviceSelect = document.getElementById('outputDevice');
-const virtualMicSpan = document.getElementById('virtualMic');
-
-// Cargar dispositivos de audio
-async function loadAudioDevices() {
-    try {
-        const response = await fetch('/audio-devices');
-        const devices = await response.json();
-        
-        // Limpiar opciones actuales
-        inputDeviceSelect.innerHTML = '';
-        outputDeviceSelect.innerHTML = '';
-        
-        // Agregar dispositivos de entrada
-        devices.input_devices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.id;
-            option.text = device.name;
-            inputDeviceSelect.appendChild(option);
-        });
-        
-        // Agregar dispositivos de salida
-        devices.output_devices.forEach(device => {
-            const option = document.createElement('option');
-            option.value = device.id;
-            option.text = device.name;
-            outputDeviceSelect.appendChild(option);
-        });
-        
-        // Mostrar micrófono virtual
-        if (devices.virtual_mic && devices.virtual_mic.description) {
-            virtualMicSpan.textContent = `${devices.virtual_mic.source_name} (${devices.virtual_mic.description})`;
-        } else {
-            virtualMicSpan.textContent = 'No encontrado - Asegúrate de que el módulo virtual-source está cargado';
+    // Verificar que todos los elementos existen
+    console.log('Checking elements...');
+    for (const [key, element] of Object.entries(elements)) {
+        console.log(`${key}: ${element ? 'Found' : 'Missing'}`);
+        if (!element) {
+            console.error(`Missing element: ${key}`);
+            return; // Detener la ejecución si falta algún elemento
         }
-        
-        // Guardar selecciones
-        selectedInputDevice = inputDeviceSelect.value;
-        selectedOutputDevice = outputDeviceSelect.value;
-        
-    } catch (error) {
-        console.error('Error loading audio devices:', error);
     }
-}
 
-// Cargar dispositivos al inicio
-loadAudioDevices();
+    // Configurar Socket.IO
+    console.log('Configuring Socket.IO...');
+    const socket = io({
+        path: '/socket.io/',
+        transports: ['websocket', 'polling']
+    });
 
-// Eventos de cambio de dispositivo
-inputDeviceSelect.addEventListener('change', (e) => {
-    selectedInputDevice = e.target.value;
-});
+    // Variables globales
+    let selectedInputDevice = null;
+    let isMonitoring = false;
 
-outputDeviceSelect.addEventListener('change', (e) => {
-    selectedOutputDevice = e.target.value;
-});
-
-// Manejar mensajes del servidor
-socket.on('connect', () => {
-    console.log('Conectado al servidor');
-});
-
-socket.on('disconnect', () => {
-    console.log('Desconectado del servidor');
-});
-
-socket.on('speech_to_text_response', (data) => {
-    if (data.text) {
-        addMessage(data.text, 'received');
-    }
-});
-
-socket.on('text_to_speech_response', async (data) => {
-    try {
-        const audio = new Audio(data.audio_url);
-        await audio.play();
-    } catch (error) {
-        console.error('Error playing audio:', error);
-    }
-});
-
-socket.on('error', (data) => {
-    console.error('Error:', data.message);
-});
-
-// Eventos de botones
-sendBtn.addEventListener('click', sendMessage);
-messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
-});
-
-voiceBtn.addEventListener('click', toggleRecording);
-
-// Funciones
-function sendMessage() {
-    const text = messageInput.value.trim();
-    if (text) {
-        // Obtener los idiomas seleccionados
-        const sourceLangValue = sourceLang.value;
-        const targetLangValue = targetLang.value;
-        
-        console.log(`Enviando mensaje - Idioma origen: ${sourceLangValue}, Idioma destino: ${targetLangValue}`);
-        
-        socket.emit('text_to_speech', {
-            text: text,
-            source_lang: sourceLangValue,
-            target_lang: targetLangValue
-        });
-        
-        addMessage(`${text} (${sourceLangValue} → ${targetLangValue})`, 'sent');
-        messageInput.value = '';
-    }
-}
-
-function addMessage(text, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message', type);
-    messageDiv.textContent = text;
-    chatMessages.appendChild(messageDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-async function toggleRecording() {
-    if (!isRecording) {
+    // Cargar dispositivos de audio
+    async function loadAudioDevices() {
         try {
-            const constraints = {
-                audio: {
-                    deviceId: selectedInputDevice ? { exact: selectedInputDevice } : undefined
-                }
-            };
+            console.log('Loading audio devices...');
+            const response = await fetch('/audio-devices');
+            const devices = await response.json();
+            console.log('Devices:', devices);
             
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                audioChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                const reader = new FileReader();
-                reader.readAsDataURL(audioBlob);
-                reader.onloadend = () => {
-                    const base64Audio = reader.result.split(',')[1];
-                    
-                    // Obtener los idiomas seleccionados
-                    const sourceLangValue = sourceLang.value;
-                    const targetLangValue = targetLang.value;
-                    
-                    console.log(`Enviando audio - Idioma origen: ${sourceLangValue}, Idioma destino: ${targetLangValue}`);
-                    
-                    socket.emit('speech_to_text', {
-                        audio: base64Audio,
-                        source_lang: sourceLangValue,
-                        target_lang: targetLangValue
-                    });
-                };
-            };
-
-            mediaRecorder.start();
-            isRecording = true;
-            voiceBtn.classList.add('recording');
+            elements.inputDevice.innerHTML = '';
+            devices.input_devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.id;
+                option.text = device.name;
+                elements.inputDevice.appendChild(option);
+            });
             
-            // Mostrar indicador de idioma actual
-            console.log(`Grabando en: ${sourceLang.value}`);
+            if (devices.virtual_mic && devices.virtual_mic.description) {
+                elements.virtualMic.textContent = `${devices.virtual_mic.source_name} (${devices.virtual_mic.description})`;
+            } else {
+                elements.virtualMic.textContent = 'No encontrado';
+            }
             
-        } catch (err) {
-            console.error('Error accessing microphone:', err);
+            selectedInputDevice = elements.inputDevice.value;
+            
+        } catch (error) {
+            console.error('Error loading audio devices:', error);
         }
-    } else {
-        mediaRecorder.stop();
-        isRecording = false;
-        voiceBtn.classList.remove('recording');
     }
-}
+
+    // Event listeners básicos
+    elements.sendBtn.addEventListener('click', () => {
+        const text = elements.messageInput.value.trim();
+        if (text) {
+            socket.emit('text_to_speech', {
+                text: text,
+                source_lang: elements.sourceLang.value,
+                target_lang: elements.targetLang.value
+            });
+            addMessage(text, 'sent');
+            elements.messageInput.value = '';
+        }
+    });
+
+    elements.messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            elements.sendBtn.click();
+        }
+    });
+
+    elements.monitorBtn.addEventListener('click', () => {
+        if (!isMonitoring) {
+            socket.emit('start_usb_monitor', {
+                device_id: selectedInputDevice,
+                source_lang: elements.targetLang.value,
+                target_lang: elements.sourceLang.value
+            });
+        } else {
+            socket.emit('stop_usb_monitor');
+        }
+        isMonitoring = !isMonitoring;
+        updateMonitoringStatus();
+    });
+
+    // Funciones de utilidad
+    function updateMonitoringStatus() {
+        elements.monitorStatus.textContent = isMonitoring ? 'Activo' : 'Inactivo';
+        elements.monitorStatus.className = `badge ${isMonitoring ? 'bg-success' : 'bg-secondary'}`;
+        elements.monitorBtn.textContent = isMonitoring ? 'Detener Monitoreo' : 'Iniciar Monitoreo';
+        elements.inputDevice.disabled = isMonitoring;
+    }
+
+    function addMessage(text, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = text;
+        elements.chatMessages.appendChild(messageDiv);
+        elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+    }
+
+    // Socket events
+    socket.on('connect', () => {
+        console.log('Connected to server');
+        loadAudioDevices();
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Disconnected from server');
+        isMonitoring = false;
+        updateMonitoringStatus();
+    });
+
+    socket.on('received_message', (data) => {
+        if (data.text) {
+            addMessage(data.text, 'received');
+        }
+    });
+
+    socket.on('error', (data) => {
+        console.error('Server error:', data.message);
+        addMessage(`Error: ${data.message}`, 'error');
+    });
+});

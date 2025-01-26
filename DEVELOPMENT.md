@@ -4,10 +4,11 @@
 
 ### Objetivo Final del Proyecto
 Sinte-Voz busca crear una interfaz de comunicación fluida que permita:
-- Conversación natural entre usuarios mediante voz y texto
+- Facilitar la comunicación telefónica y por videoconferencia para personas sordomudas
+- Proporcionar una experiencia de usuario natural y eficiente
+- Integración transparente con aplicaciones de comunicación existentes
 - Traducción automática en tiempo real
 - Capacidad de grabar y archivar conversaciones
-- Potencial futuro para integración con sistemas de IA conversacional
 - Interfaz web accesible y responsive
 - Sistema robusto de manejo de audio en Linux
 
@@ -36,6 +37,20 @@ Sinte-Voz busca crear una interfaz de comunicación fluida que permita:
    - Configuración efectiva de audio en Linux
    - Manejo de archivos temporales y limpieza
    - Importancia de la sincronización en comunicación bidireccional
+
+### Consideraciones de Accesibilidad
+1. **Prioridades para Usuarios Sordomudos**:
+   - Minimizar la latencia en la conversión texto-voz
+   - Asegurar alta precisión en el reconocimiento de voz
+   - Interfaz visual clara y sin distracciones
+   - Indicadores visuales de estado del audio
+   - Soporte para múltiples idiomas
+
+2. **Integración con Plataformas de Comunicación**:
+   - Configuración simple de dispositivos virtuales
+   - Compatibilidad verificada con Zoom y otras plataformas
+   - Manejo robusto de audio bidireccional
+   - Monitoreo de calidad de audio
 
 ### Próximos Pasos
 
@@ -260,6 +275,125 @@ ps aux | grep python
    - Limpieza periódica de archivos temporales
    - Monitoreo de uso de recursos
    - Backups de configuraciones
+
+### Implementación de Audio USB (v0.3.0)
+
+### Captura de Audio
+
+La captura de audio USB se implementa usando PyAudio con las siguientes optimizaciones:
+
+- **Formato de Audio**:
+  - Sample Rate: 16kHz (optimizado para reconocimiento de voz)
+  - Canales: Mono (suficiente para voz)
+  - Formato: Float32 (mejor calidad)
+  - Chunk Size: 1024 (balance entre latencia y rendimiento)
+
+- **Detección de Dispositivo**:
+  ```python
+  # Buscar dispositivo USB por nombre
+  for i in range(p.get_device_count()):
+      dev_info = p.get_device_info_by_index(i)
+      if dev_info['maxInputChannels'] > 0 and 'usb' in dev_info['name'].lower():
+          device_index = i
+          break
+  ```
+
+- **Procesamiento de Audio**:
+  - Buffer dinámico basado en silencio
+  - Procesamiento cada 1-2 segundos
+  - Detección de silencio para mejor segmentación
+
+### Reconocimiento y Traducción
+
+- **Speech Recognition**:
+  - Uso de Google Speech Recognition
+  - Configuración optimizada:
+    ```python
+    recognizer.energy_threshold = 300
+    recognizer.dynamic_energy_threshold = True
+    recognizer.pause_threshold = 0.5
+    ```
+
+- **Traducción**:
+  - Traducción en tiempo real con googletrans
+  - Soporte bidireccional entre idiomas
+  - Manejo de errores y reintentos
+
+### Arquitectura del Sistema
+
+```mermaid
+graph TD
+    A[Audio USB] --> B[PyAudio Stream]
+    B --> C[Buffer de Audio]
+    C --> D[Detección de Silencio]
+    D --> E[Speech Recognition]
+    E --> F[Traducción]
+    F --> G[Socket.IO]
+    G --> H[Cliente Web]
+```
+
+### Manejo de Errores
+
+1. **Dispositivo USB**:
+   - Detección automática del índice
+   - Fallback a dispositivo por defecto
+   - Logs detallados de dispositivos
+
+2. **Captura de Audio**:
+   - Manejo de overflow
+   - Reinicio automático en caso de error
+   - Buffer dinámico para evitar pérdida de datos
+
+3. **Reconocimiento**:
+   - Manejo de UnknownValueError
+   - Reintentos en RequestError
+   - Timeout configurable
+
+### Optimizaciones de Rendimiento
+
+1. **Latencia**:
+   - Buffer más pequeño (1024 samples)
+   - Procesamiento asíncrono
+   - Sleep time reducido (0.01s)
+
+2. **Calidad de Audio**:
+   - Float32 para mejor precisión
+   - Mono para reducir datos
+   - 16kHz optimizado para voz
+
+3. **Memoria**:
+   - Limpieza de buffer después de procesar
+   - Garbage collection periódico
+   - Manejo eficiente de recursos
+
+### Integración con el Sistema
+
+1. **PulseAudio**:
+   - Compatibilidad con dispositivos virtuales
+   - Routing automático de audio
+   - Monitoreo de dispositivos
+
+2. **Socket.IO**:
+   - Eventos en tiempo real
+   - Manejo de desconexiones
+   - Buffer de mensajes
+
+### Próximos Pasos
+
+1. **Mejoras Planificadas**:
+   - Cancelación de eco
+   - VAD (Voice Activity Detection)
+   - Compresión de audio
+
+2. **Optimizaciones Futuras**:
+   - Caché de traducciones
+   - Procesamiento en GPU
+   - Reducción de latencia
+
+3. **Características Pendientes**:
+   - Grabación de conversaciones
+   - Estadísticas de uso
+   - Panel de administración
 
 ### Conclusiones del Capítulo 1
 
