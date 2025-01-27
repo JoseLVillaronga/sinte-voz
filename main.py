@@ -270,7 +270,7 @@ async def get_audio_devices():
             'input_devices': input_devices,
             'output_devices': output_devices,
             'virtual_mic': {
-                'name': 'Virtual_Microphone_Input',
+                'name': 'virtual_mic',
                 'description': None,
                 'source_name': None
             }
