@@ -112,11 +112,11 @@ python main.py
 ## Integración con Zoom/Meet
 
 1. En la configuración de audio de tu aplicación de videoconferencia:
-   - Selecciona "Monitor of Null Output" como micrófono
+   - Selecciona "Virtual_Microphone_Input" como micrófono
    - Selecciona tu dispositivo de salida normal para los altavoces
 
 2. Cuando alguien hable:
-   - Su voz será capturada por el micrófono USB
+   - Su voz será capturada por la salida de audio USB
    - El texto traducido aparecerá en el chat
    - Puedes responder escribiendo en el chat y se enviará como voz
 
