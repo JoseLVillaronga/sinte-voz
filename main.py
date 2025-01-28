@@ -24,6 +24,8 @@ import threading
 import pyaudio
 import subprocess
 import re
+import torch
+from TTS.api import TTS
 
 # Crear la aplicación FastAPI
 fastapi_app = FastAPI()
@@ -289,12 +291,44 @@ async def connect(sid, environ):
 async def disconnect(sid):
     print(f"Client disconnected: {sid}")
 
+# Variables globales para TTS
+tts_engines = {}
+use_cuda = torch.cuda.is_available()
+print(f"CUDA disponible: {use_cuda}")
+
+def initialize_tts():
+    """Inicializa los motores TTS con soporte CUDA si está disponible."""
+    global tts_engines
+    device = "cuda" if use_cuda else "cpu"
+    
+    try:
+        # Modelo en español
+        tts_engines['es'] = TTS("tts_models/es/css10/vits").to(device)
+        print(f"Modelo español inicializado usando {device}")
+        
+        # Modelo en inglés
+        tts_engines['en'] = TTS("tts_models/en/ljspeech/vits").to(device)
+        print(f"Modelo inglés inicializado usando {device}")
+        
+        return True
+    except Exception as e:
+        print(f"Error inicializando TTS: {e}")
+        tts_engines = {}
+        return False
+
+# Inicializar TTS al arrancar
+initialize_tts()
+
 @sio.on('text_to_speech')
 async def handle_text_to_speech(sid, data):
     try:
         text = data.get('text', '')
         source_lang = data.get('source_lang', 'es')  # Idioma del texto de entrada
         target_lang = data.get('target_lang', 'en')  # Idioma para el audio
+        
+        if not text:
+            return
+            
         print(f"Texto original ({source_lang}): {text}")
         
         # Traducir al idioma objetivo
@@ -303,37 +337,49 @@ async def handle_text_to_speech(sid, data):
         text = translated.text
         print(f"Texto traducido ({target_lang}): {text}")
         
-        # Generar un nombre único para el archivo
         timestamp = int(time.time() * 1000)
         output_path = f"static/temp/output_{timestamp}.mp3"
         
-        # Generar el audio con gTTS en el idioma objetivo
-        tts = gTTS(text=text, lang=target_lang)
-        tts.save(output_path)
-        
-        print(f"Audio generated at {output_path}")
-        
-        # Verificar que el archivo existe y tiene tamaño
-        if os.path.exists(output_path):
-            size = os.path.getsize(output_path)
-            print(f"Audio file size: {size} bytes")
+        try:
+            if target_lang in tts_engines:
+                # Usar el modelo específico para el idioma objetivo
+                print(f"Generando audio con Coqui TTS en {target_lang}...")
+                tts_engines[target_lang].tts_to_file(text=text, file_path=output_path)
+            else:
+                # Fallback a gTTS si no tenemos modelo para ese idioma
+                print(f"Usando gTTS como fallback para {target_lang}...")
+                tts = gTTS(text=text, lang=target_lang)
+                tts.save(output_path)
             
-            # Reproducir en virtual_speaker
-            print("Playing audio...")
-            os.system(f'paplay --device=virtual_speaker "{output_path}"')
+            print(f"Audio generated at {output_path}")
             
-            # Enviar URL del audio al cliente
-            await sio.emit('text_to_speech_response', {
-                'audio_url': f'/temp/output_{timestamp}.mp3'
-            }, to=sid)
+            # Verificar que el archivo existe y tiene tamaño
+            if os.path.exists(output_path):
+                size = os.path.getsize(output_path)
+                print(f"Audio file size: {size} bytes")
+                
+                # Reproducir en virtual_speaker
+                print("Playing audio...")
+                os.system(f'paplay --device=virtual_speaker "{output_path}"')
+                
+                # Enviar URL del audio al cliente
+                await sio.emit('text_to_speech_response', {
+                    'audio_url': f'/temp/output_{timestamp}.mp3'
+                }, to=sid)
+                
+                # Limpiar archivos antiguos
+                cleanup_old_files()
+                
+            else:
+                print("Warning: Audio file was not created!")
             
-            # Limpiar archivos antiguos
-            cleanup_old_files()
-        else:
-            print("Warning: Audio file was not created!")
-        
+        except Exception as e:
+            print(f"Error en síntesis de voz: {e}")
+            traceback.print_exc()
+            await sio.emit('error', {'message': str(e)}, to=sid)
+            
     except Exception as e:
-        print(f"Error in text_to_speech: {str(e)}")
+        print(f"Error en handle_text_to_speech: {e}")
         traceback.print_exc()
         await sio.emit('error', {'message': str(e)}, to=sid)
 
