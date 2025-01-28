@@ -21,9 +21,11 @@ Sinte-Voz es una aplicación web diseñada para facilitar la comunicación bidir
 - 🎯 Baja latencia en reconocimiento de voz
 - 🔌 Detección automática de dispositivos USB
 - 🎙️ Micrófono virtual para aplicaciones de videoconferencia
+- 🔒 Gestión segura de concurrencia y recursos GPU
+- 🧠 Procesamiento optimizado con CUDA
 - Interfaz web en tiempo real usando Socket.IO
 - Síntesis de voz (TTS) usando gTTS
-- Reconocimiento de voz usando Speech Recognition
+- Reconocimiento de voz usando Whisper
 - Traducción automática con Google Translate
 - Manejo de dispositivos de audio virtuales con PulseAudio
 - Grabación de audio en formato WAV
@@ -42,6 +44,8 @@ Sinte-Voz es una aplicación web diseñada para facilitar la comunicación bidir
 
 ## Requisitos del Sistema
 - Python 3.11 o superior
+- CUDA Toolkit (requerido para procesamiento GPU)
+- GPU NVIDIA compatible con CUDA
 - PulseAudio
 - Navegador web moderno
 - Conexión a Internet (para TTS y traducción)

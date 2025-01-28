@@ -11,3 +11,4 @@ python-multipart==0.0.6
 aiofiles==23.2.1
 PyAudio==0.2.14
 TTS==0.22.0  # Coqui TTS con soporte CUDA
+openai-whisper==20231117  # Whisper con soporte CUDA

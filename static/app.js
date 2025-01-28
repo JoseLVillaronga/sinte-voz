@@ -118,10 +118,26 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.inputDevice.disabled = isMonitoring;
     }
 
-    function addMessage(text, type) {
+    function addMessage(text, type, timestamps = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}`;
-        messageDiv.textContent = text;
+        
+        // Crear contenedor de texto
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        textDiv.textContent = text;
+        messageDiv.appendChild(textDiv);
+        
+        // Agregar timestamps si están disponibles
+        if (timestamps) {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            const start = new Date(timestamps.start * 1000).toISOString().substr(11, 8);
+            const end = new Date(timestamps.end * 1000).toISOString().substr(11, 8);
+            timeDiv.textContent = `${start} - ${end}`;
+            messageDiv.appendChild(timeDiv);
+        }
+        
         elements.chatMessages.appendChild(messageDiv);
         elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
     }
@@ -142,22 +158,30 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Monitor status:', data);
         if (data.status === 'started') {
             isMonitoring = true;
+            addMessage('Monitoreo iniciado', 'system');
         } else if (data.status === 'stopped') {
             isMonitoring = false;
+            addMessage('Monitoreo detenido', 'system');
         }
         updateMonitoringStatus();
     });
 
     socket.on('received_message', (data) => {
         if (data.text) {
-            addMessage(data.text, 'received');
+            const timestamps = data.start_time && data.end_time ? {
+                start: data.start_time,
+                end: data.end_time
+            } : null;
+            addMessage(data.text, 'received', timestamps);
         }
     });
 
     socket.on('error', (data) => {
         console.error('Server error:', data.message);
         addMessage(`Error: ${data.message}`, 'error');
-        isMonitoring = false;
-        updateMonitoringStatus();
+        if (data.fatal) {
+            isMonitoring = false;
+            updateMonitoringStatus();
+        }
     });
 });

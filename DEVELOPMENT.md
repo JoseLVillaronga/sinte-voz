@@ -402,3 +402,52 @@ El sistema base está funcionando con las características fundamentales impleme
 ---
 
 *Nota: Este documento está pensado para ser actualizado continuamente con cada sesión de desarrollo. Cada capítulo representará una fase significativa del desarrollo del proyecto.*
+
+## Capítulo 4: Optimización de Recursos y Concurrencia
+
+### Gestión de Recursos GPU
+1. **Control de Memoria CUDA**:
+   - Implementación de limpieza automática de memoria GPU
+   - Uso de semáforos para limitar procesamiento concurrente
+   - Sincronización explícita de operaciones CUDA
+
+2. **Código Implementado**:
+   ```python
+   # Semáforo para control de concurrencia
+   self.processing_lock = Semaphore(1)
+
+   # Limpieza de memoria GPU
+   def _clear_gpu_memory(self):
+       if torch.cuda.is_available():
+           torch.cuda.empty_cache()
+           gc.collect()
+
+   # Uso seguro de recursos
+   with self.processing_lock:
+       try:
+           # Procesar audio
+           torch.cuda.synchronize()
+       finally:
+           self._clear_gpu_memory()
+   ```
+
+3. **Beneficios Logrados**:
+   - Prevención de errores de memoria CUDA
+   - Mejor manejo de solicitudes concurrentes
+   - Mayor estabilidad en procesamiento continuo
+   - Reducción de fallos por agotamiento de memoria
+
+4. **Consideraciones de Rendimiento**:
+   - Balance entre concurrencia y uso de memoria
+   - Priorización de estabilidad sobre velocidad
+   - Monitoreo activo de recursos GPU
+   - Liberación proactiva de memoria
+
+### Próximos Pasos
+1. **Optimizaciones Pendientes**:
+   - Implementar cache de resultados frecuentes
+   - Ajustar parámetros de modelo según carga
+   - Explorar procesamiento por lotes
+   - Mejorar manejo de errores específicos de CUDA
+
+```
