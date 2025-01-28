@@ -83,7 +83,7 @@ pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=dev
 sleep 2
 pactl load-module module-remap-source master=virtual_speaker.monitor source_properties=device.description="Virtual_Microphone_Input"
 sleep 2
-pactl load-module module-null-sink sink_name=virtual_speaker_out sink_properties=device.description="Virtual_Speaker_Out"
+pactl load-module module-null-sink sink_name=virtual_speaker sink_properties=device.description="VirtualSpeaker"
 sleep 2
 pactl list short sources
 ```

@@ -40,25 +40,25 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadAudioDevices() {
         try {
             console.log('Loading audio devices...');
-            const response = await fetch('/audio-devices');
-            const devices = await response.json();
-            console.log('Devices:', devices);
+            const response = await fetch('/audio_devices');
+            const data = await response.json();
+            console.log('Devices:', data);
             
-            elements.inputDevice.innerHTML = '';
-            devices.input_devices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device.id;
-                option.text = device.name;
-                elements.inputDevice.appendChild(option);
-            });
-            
-            if (devices.virtual_mic && devices.virtual_mic.description) {
-                elements.virtualMic.textContent = `${devices.virtual_mic.source_name} (${devices.virtual_mic.description})`;
-            } else {
-                elements.virtualMic.textContent = 'No encontrado';
+            if (data.devices) {
+                elements.inputDevice.innerHTML = '<option value="">Seleccione un dispositivo...</option>';
+                data.devices.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.id;
+                    option.textContent = device.name + (device.state === 'RUNNING' ? ' (Activo)' : '');
+                    elements.inputDevice.appendChild(option);
+                });
+            } else if (data.error) {
+                console.error('Error loading devices:', data.error);
+                elements.inputDevice.innerHTML = '<option value="">Error al cargar dispositivos</option>';
             }
             
             selectedInputDevice = elements.inputDevice.value;
+            console.log('Selected device:', selectedInputDevice);
             
         } catch (error) {
             console.error('Error loading audio devices:', error);
@@ -66,6 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Event listeners básicos
+    elements.inputDevice.addEventListener('change', (e) => {
+        selectedInputDevice = e.target.value;
+        console.log('Selected device:', selectedInputDevice);
+    });
+
     elements.sendBtn.addEventListener('click', () => {
         const text = elements.messageInput.value.trim();
         if (text) {
@@ -87,13 +92,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.monitorBtn.addEventListener('click', () => {
         if (!isMonitoring) {
-            socket.emit('start_usb_monitor', {
+            if (!selectedInputDevice) {
+                console.error('No device selected');
+                return;
+            }
+            console.log('Starting monitor with device:', selectedInputDevice);
+            socket.emit('start_monitor', {
                 device_id: selectedInputDevice,
                 source_lang: elements.targetLang.value,
                 target_lang: elements.sourceLang.value
             });
         } else {
-            socket.emit('stop_usb_monitor');
+            console.log('Stopping monitor');
+            socket.emit('stop_monitor');
         }
         isMonitoring = !isMonitoring;
         updateMonitoringStatus();
@@ -127,6 +138,16 @@ document.addEventListener('DOMContentLoaded', () => {
         updateMonitoringStatus();
     });
 
+    socket.on('monitor_status', (data) => {
+        console.log('Monitor status:', data);
+        if (data.status === 'started') {
+            isMonitoring = true;
+        } else if (data.status === 'stopped') {
+            isMonitoring = false;
+        }
+        updateMonitoringStatus();
+    });
+
     socket.on('received_message', (data) => {
         if (data.text) {
             addMessage(data.text, 'received');
@@ -136,5 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('error', (data) => {
         console.error('Server error:', data.message);
         addMessage(`Error: ${data.message}`, 'error');
+        isMonitoring = false;
+        updateMonitoringStatus();
     });
 });
